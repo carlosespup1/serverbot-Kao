@@ -22,9 +22,13 @@ We're gonna use the next tech:
 
 ## Installation
 
-You are gonna find a requeriments.txt in the repo files.
+You are gonna find a requeriments.txt in the repo files. 
+
+Create and activate Virtual Enviroment
 ```sh
 cd <project file>
+python3 -m venv .env
+source .env/bin/activate
 pip -r requirements.txt
 ```
 
