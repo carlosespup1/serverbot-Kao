@@ -35,9 +35,3 @@ pip freeze
 ```
 and make sure all the package were installed.
 
-then create a .env file and put:
-```
-TOKEN=yourtoken
-```
-and finally run python app.py or python3 app.py
-
