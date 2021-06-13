@@ -1,0 +1,17 @@
+{
+  "name": "serverbot-Kao",
+  "version": "1.0.0",
+  "description": "a simple bot",
+  "main": "meme.js",
+  "scripts": {
+    "start": "node meme.js"
+  },
+  "author": "pai",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "cheerio": "^1.0.0-rc.5",
+    "discord.js": "^12.5.1",
+    "dotenv": "^10.0.0"
+  }
+}
