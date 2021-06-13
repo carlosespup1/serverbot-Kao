@@ -74,3 +74,18 @@ Push your changes using
 git push origin <branch-name>
 ```
 
+### 5. Submit your changes to review
+
+Click to *Compare & pull request* button
+
+![cap1](/caps/compare.JPG)
+
+Then, select your branch and the destination branch. **Make sure that *develop* is the destination**.
+
+Fill the gaps, and add reviewers (@gcmurillo, @kaolof, @carlosespup1)
+
+![cap2](/caps/pr.JPG)
+
+If the changes are approved, a reviewer will close the PR.
+
+![cap3](/caps/close.JPG)
