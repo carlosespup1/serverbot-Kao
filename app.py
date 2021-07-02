@@ -37,13 +37,8 @@ async def y2_playlist(ctx, *args):
         server = ctx.guild
         if args[0] == "add-playlist":
             try:
-                _response = y2.create_playlist(args[1], user.name, server.name)
-                if _response == y2.PlaylistEnum.CREATED:
-                    await ctx.send(f"Playlist **{args[1]}** creada con éxito por **{user.name}**")
-                elif _response == y2.PlaylistEnum.ALREADY_EXISTS:
-                    await ctx.send(f"Playlist **{args[1]}** ya existe.")
-                else:
-                    await ctx.send("*Ups!* No se pudo crear, intente más luego.")
+                _response, _ = y2.create_playlist(args[1], user.name, server.name)
+                await ctx.send(_response)
             except:
                 await ctx.send("Es probable que no hayas enviado el nombre de la playlist.")
         elif args[0] == "add-video":

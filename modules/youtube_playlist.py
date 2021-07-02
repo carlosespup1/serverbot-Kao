@@ -28,6 +28,7 @@ class PlaylistEnum(Enum):
 def create_playlist(playlist, username, servername = "", db=db):
     """
     Create playlist in MongoDB
+    Return message and enum
     playlist: Playlist name
     username: Who create playlist
     servername: Server associated with
@@ -35,15 +36,15 @@ def create_playlist(playlist, username, servername = "", db=db):
     playlists_collection = db.playlists
     result = playlists_collection.find({ "name": playlist })
     if result.count() > 0:
-        return PlaylistEnum.ALREADY_EXISTS
+        return f"Playlist **{playlist}** ya existe.", PlaylistEnum.ALREADY_EXISTS
     created = playlists_collection.insert_one({
         "name": playlist,
         "user": username,
         "server": servername
     })
     if created:
-        return PlaylistEnum.CREATED
-    return PlaylistEnum.CREATION_ERROR
+        return f"Playlist **{playlist}** creada con éxito por **{username}**", PlaylistEnum.CREATED
+    return "*Ups!* No se pudo crear, intente más luego.", PlaylistEnum.CREATION_ERROR
 
 
 def get_playlists(servername, db = db):
@@ -76,7 +77,7 @@ def _help():
     `y2_playlist add-video <playlist> <videourl>`
     Se debe tener en consideración que la playlist debe estar creada.
 
-    **Para obtener la lista de playlist
+    **Para obtener la lista de playlist**
     Ejecute: 
     `-y2_playlist get-playlists`
     """ 
