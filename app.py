@@ -49,7 +49,7 @@ async def y2_playlist(ctx, *args):
                 await ctx.send("**Error**: verifica que estás enviando la playlist y la url del video.")
         elif args[0] == "get-playlists":
             data = y2.get_playlists(server.name)
-            await ctx.send(data)
+            await ctx.send(embed=data)
         elif args[0] == "get-videos":
             try:
                 data = y2.get_videos(args[1], server.name)

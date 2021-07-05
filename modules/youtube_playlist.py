@@ -67,13 +67,12 @@ def get_playlists(servername, db = db):
     """
     playlists_collection = db.playlists
     result = playlists_collection.find({ "server": servername })
-    data = []
+    embed = discord.Embed(title="Playlists")
     for i in result:
-        data.append([
-            i["name"],
-            i["user"]
-        ])
-    return "```\n" + tabulate(data, headers=["Nombre", "Creada por"], tablefmt="pretty") + "```\n"
+        _name = i["name"]
+        _user = i["user"]
+        embed.add_field(name=_name, value=f"> Creada por: {_user}", inline=False)
+    return embed
 
 def _help():
     return """
@@ -144,6 +143,8 @@ def get_videos(playlist, server = "", db = db):
         return discord.Embed(title=f"La playlist **{playlist}** no existe.")
     try:
         videos = _playlist["videos"]
+        if len(videos) == 0:
+            return discord.Embed(title=f"No existen videos en **{playlist}**")
         embed = discord.Embed(title=f"Videos de {playlist}")
         for v in videos:
             _title = v["title"]
