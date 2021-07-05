@@ -9,5 +9,7 @@ multidict==5.1.0
 pkg-resources==0.0.0
 pymongo==3.11.4
 python-dotenv==0.18.0
+pytube==10.8.5
+tabulate==0.8.9
 typing-extensions==3.10.0.0
 yarl==1.6.3
