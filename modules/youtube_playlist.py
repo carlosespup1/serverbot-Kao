@@ -5,6 +5,7 @@ from enum import Enum
 from tabulate import tabulate
 from pytube import YouTube
 import json
+import discord
 
 load_dotenv()
 MONGO_HOST = os.getenv('MONGO_HOST') # ADD "mongodb://localhost:27017" in your local .env file
@@ -86,7 +87,7 @@ def _help():
 
     **Para agregar videos**
     Ejecute:
-    `y2_playlist add-video <playlist> <videourl>`
+    `-y2_playlist add-video <playlist> <videourl>`
     Se debe tener en consideración que la playlist debe estar creada.
 
     **Para obtener la lista de playlist**
@@ -95,6 +96,13 @@ def _help():
     """ 
 
 def add_video(playlist, url, server = "", user = "", db = db):
+    """
+    Update playlist videos list with new video.
+    playlist: playlist name
+    url: YouTube video url
+    server: server name associated with playlist
+    user: user who invoke command
+    """
     p_collection = db.playlists
     _playlist = p_collection.find_one({ "server": server, "name": playlist })
     if not _playlist:  # Validar si existe playlist
@@ -128,3 +136,21 @@ def add_video(playlist, url, server = "", user = "", db = db):
         return f"El video **{yt.title}** ha sido agregado correctamente a **{playlist}**"
     except:
         return f"Error al agregar video a **{playlist}**!"
+
+def get_videos(playlist, server = "", db = db):
+    p_collection = db.playlists
+    _playlist = p_collection.find_one({ "server": server, "name": playlist })
+    if not _playlist:
+        return discord.Embed(title=f"La playlist **{playlist}** no existe.")
+    try:
+        videos = _playlist["videos"]
+        embed = discord.Embed(title=f"Videos de {playlist}")
+        for v in videos:
+            _title = v["title"]
+            _id = v["position"]
+            _url = v["url"]
+            _user = v["user"]
+            embed.add_field(name=f"**{_title}**", value=f"> Id: {_id}\n> Link: {_url}\n> Agregado por: {_user}", inline=False)
+        return embed
+    except:
+        return discord.Embed(f"Ups! No fue posible obtener los videos de **{playlist}**. Intente más luego.")
