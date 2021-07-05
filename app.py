@@ -42,7 +42,11 @@ async def y2_playlist(ctx, *args):
             except:
                 await ctx.send("Es probable que no hayas enviado el nombre de la playlist.")
         elif args[0] == "add-video":
-            await ctx.send("En desarrollo")
+            try:
+                _response = y2.add_video(args[1], args[2], server.name, user.name)
+                await ctx.send(_response)
+            except:
+                await ctx.send("**Error**: verifica que estás enviando la playlist y la url del video.")
         elif args[0] == "get-playlists":
             data = y2.get_playlists(server.name)
             await ctx.send(data)

@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 import os
 from enum import Enum
 from tabulate import tabulate
+from pytube import YouTube
+import json
 
 load_dotenv()
 MONGO_HOST = os.getenv('MONGO_HOST') # ADD "mongodb://localhost:27017" in your local .env file
@@ -13,10 +15,19 @@ db = client[DBNAME]
 
 # Playlist collection struct
 # {
-#     id: ObjectDd(),
-#     name: "playlist_name",
-#     user: "username",
-#     server: "servername"
+#     id: ObjectId(),
+#     name: string,
+#     user: string,
+#     server: string,
+#     videos: [videos...]
+# }
+# Video collection struct
+# {
+#     position : int
+#     title: string,
+#     url: string,
+#     user: string,
+#     video_id: youtube_id
 # }
 
 # To manage playlist creation states
@@ -34,13 +45,14 @@ def create_playlist(playlist, username, servername = "", db=db):
     servername: Server associated with
     """
     playlists_collection = db.playlists
-    result = playlists_collection.find({ "name": playlist })
+    result = playlists_collection.find({ "name": playlist, "server": servername })
     if result.count() > 0:
         return f"Playlist **{playlist}** ya existe.", PlaylistEnum.ALREADY_EXISTS
     created = playlists_collection.insert_one({
         "name": playlist,
         "user": username,
-        "server": servername
+        "server": servername,
+        "videos": []
     })
     if created:
         return f"Playlist **{playlist}** creada con éxito por **{username}**", PlaylistEnum.CREATED
@@ -81,3 +93,38 @@ def _help():
     Ejecute: 
     `-y2_playlist get-playlists`
     """ 
+
+def add_video(playlist, url, server = "", user = "", db = db):
+    p_collection = db.playlists
+    _playlist = p_collection.find_one({ "server": server, "name": playlist })
+    if not _playlist:  # Validar si existe playlist
+        return f"La playlist **{playlist}** no existe, por favor, créala para poder usarla."
+    try:  # obtener datos del video
+        yt = YouTube(url)
+        res = json.loads(yt.vid_info["player_response"])
+        video_id = res["videoDetails"]["videoId"]
+        _videos = _playlist["videos"]
+    except:
+        return f"El video {url} es inaccesible."
+    try:  # Se valida si el video ya existe en la playlist, si no, se guarda,
+        founded_video = p_collection.find_one({ "name": playlist, "server": server, "videos.video_id": video_id })
+        if founded_video:
+            video_user = founded_video["user"]
+            return f"El video **{yt.title}** ya existe en **{playlist}**, fue agregado por **{video_user}**"
+        p_collection.update(
+            { "_id": _playlist["_id"]},
+            {
+                '$push': {
+                    'videos': {
+                        'position': len(_videos) + 1,
+                        'title': yt.title,
+                        'url': url,
+                        'user': user,
+                        'video_id':  video_id
+                    }
+                }
+            }
+        )
+        return f"El video **{yt.title}** ha sido agregado correctamente a **{playlist}**"
+    except:
+        return f"Error al agregar video a **{playlist}**!"
