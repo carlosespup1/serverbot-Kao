@@ -113,6 +113,10 @@ def _help():
     **Para eliminar una playlist**
     Ejecute
     `-y2_playlist delete-playlist <playlist>`
+    
+    **Para renombrar una playlist**
+    Ejecute
+    `-y2_playlist rename <actual_name> <new_name>`
 
     """ 
 
