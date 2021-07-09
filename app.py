@@ -52,10 +52,16 @@ async def y2_playlist(ctx, *args):
             await ctx.send(embed=data)
         elif args[0] == "get-videos":
             try:
-                data = y2.get_videos(args[1], server.name)
+                data, _ = y2.get_videos(args[1], server.name)
                 await ctx.send(embed=data)
             except:
                 await ctx.send("**Error**: Parece que ha olvidado el nombre de la playlist")
+        elif args[0] == "delete-video":
+            try:
+                embed = y2.delete_video_from_playlist(args[1], server.name, args[2])
+                await ctx.send(embed=embed)
+            except:
+                await ctx.send("**Error:**: Parace que has olvidado el nombre de la playlist o la posición del video. Por favor, verifica.")
     else:
         await ctx.send(y2._help())
     

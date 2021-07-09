@@ -1,3 +1,4 @@
+from emoji.core import emojize
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
@@ -6,6 +7,7 @@ from tabulate import tabulate
 from pytube import YouTube
 import json
 import discord
+import emoji
 
 load_dotenv()
 MONGO_HOST = os.getenv('MONGO_HOST') # ADD "mongodb://localhost:27017" in your local .env file
@@ -36,6 +38,11 @@ class PlaylistEnum(Enum):
     ALREADY_EXISTS = 0
     CREATED = 1
     CREATION_ERROR = 2
+
+class VideosEnum(Enum):
+    PLAYLIST_DOESNT_EXISTS = 0
+    OK = 1 # playlist exists, with content or not
+    DB_ERROR = 2
 
 def create_playlist(playlist, username, servername = "", db=db):
     """
@@ -92,6 +99,15 @@ def _help():
     **Para obtener la lista de playlist**
     Ejecute: 
     `-y2_playlist get-playlists`
+
+    **Para obtener la lista de los videos de una playlist**
+    Ejecute
+    `-y2_playlist get-videos <playlist>`
+
+    **Para eliminar un video de una playlist**
+    Ejecute
+    `-y2_playlist delete-video <playlist> <position>`
+
     """ 
 
 def add_video(playlist, url, server = "", user = "", db = db):
@@ -119,7 +135,7 @@ def add_video(playlist, url, server = "", user = "", db = db):
             video_user = founded_video["user"]
             return f"El video **{yt.title}** ya existe en **{playlist}**, fue agregado por **{video_user}**"
         p_collection.update(
-            { "_id": _playlist["_id"]},
+            { "_id": _playlist["_id"] },
             {
                 '$push': {
                     'videos': {
@@ -137,21 +153,66 @@ def add_video(playlist, url, server = "", user = "", db = db):
         return f"Error al agregar video a **{playlist}**!"
 
 def get_videos(playlist, server = "", db = db):
+    """
+    Get videos from playlist.
+    playlist: playlist name
+    server: server name associated with playlist
+    Return: Embed discord object and None if playlist doesn´t exist or error, or video list
+    """
     p_collection = db.playlists
     _playlist = p_collection.find_one({ "server": server, "name": playlist })
     if not _playlist:
-        return discord.Embed(title=f"La playlist **{playlist}** no existe.")
+        return discord.Embed(title=f"La playlist **{playlist}** no existe."), { "status": VideosEnum.PLAYLIST_DOESNT_EXISTS, "videos": None}
     try:
         videos = _playlist["videos"]
         if len(videos) == 0:
-            return discord.Embed(title=f"No existen videos en **{playlist}**")
+            return discord.Embed(title=f"No existen videos en **{playlist}**"), { "status": VideosEnum.OK, "videos": videos }
         embed = discord.Embed(title=f"Videos de {playlist}")
         for v in videos:
             _title = v["title"]
             _id = v["position"]
             _url = v["url"]
             _user = v["user"]
-            embed.add_field(name=f"**{_title}**", value=f"> Id: {_id}\n> Link: {_url}\n> Agregado por: {_user}", inline=False)
-        return embed
+            embed.add_field(name=f"**{_title}**", value=f"> Pos: {_id}\n> Link: {_url}\n> Agregado por: {_user}", inline=False)
+        return embed, { "status": VideosEnum.OK, "videos": videos }
     except:
-        return discord.Embed(f"Ups! No fue posible obtener los videos de **{playlist}**. Intente más luego.")
+        return discord.Embed(f"Ups! No fue posible obtener los videos de **{playlist}**. Intente más luego."), { "status": VideosEnum.DB_ERROR, "videos": None }
+
+def delete_video_from_playlist(playlist, server, position, db=db):
+    """
+    Delete video from playlist given position
+    playlist: Playlist name
+    server: server name
+    position: Video position in the playlist
+    """
+    p_collection = db.playlists
+    _playlist = p_collection.find_one({ "server": server, "name": playlist })
+    embed, res = get_videos(playlist, server, db = db)
+    if res["videos"] is None and VideosEnum.PLAYLIST_DOESNT_EXISTS:
+        return embed
+    if res["videos"] is None and VideosEnum.DB_ERROR:
+        return embed
+    if not str(position).isdigit():
+        return discord.Embed(title=f"Recuerda que se debe identificar el video a eliminar con el número de su posición.")
+    if len(res["videos"]) < int(position):
+        mess = emoji.emojize("IndexOfOutArray amiguito :grimacing:")
+        return discord.Embed(title=mess)
+    pos = int(position)
+    videos = res["videos"]
+    try:
+        for i in videos:
+            if i["position"] > pos:
+                i["position"] -= 1
+        d_title = videos.pop(pos - 1)["title"]
+        p_collection.update(
+            { "_id": _playlist["_id"] },
+            {
+                '$set': {
+                    'videos': videos
+                }
+            }
+        )
+    except:
+        return discord.Embed(title="Algo salió mal :(")
+    return discord.Embed(title=emoji.emojize(f"El video *{d_title}* ha sido eliminado exitosamente :scream_cat:."))
+
