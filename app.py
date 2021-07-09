@@ -68,6 +68,12 @@ async def y2_playlist(ctx, *args):
                 await ctx.send(embed=embed)
             except:
                 await ctx.send("**Error:**: Parace que has olvidado el nombre de la playlist. Por favor, verifica.")
+        elif args[0] == "rename":
+            try:
+                embed = y2.update_playlist_name(args[1], server.name, args[2], user.name)
+                await ctx.send(embed=embed)
+            except:
+                await ctx.send("**Error:**: Parace que has olvidado algún parámetro. Por favor, verifica.")
     else:
         await ctx.send(y2._help())
     

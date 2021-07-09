@@ -73,9 +73,9 @@ def get_playlists(servername, db = db):
     servername: Where playlists is associated
     """
     playlists_collection = db.playlists
-    result = playlists_collection.find({ "server": servername })
-    if len(list(result)) == 0:
-        return discord.Embed(title="No existen playlists creadas.")
+    result = list(playlists_collection.find({ "server": servername }))
+    if len(result) == 0:
+        return discord.Embed(description="No existen playlists creadas.")
     embed = discord.Embed(title="Playlists")
     for i in result:
         _name = i["name"]
@@ -127,19 +127,19 @@ def add_video(playlist, url, server = "", user = "", db = db):
     p_collection = db.playlists
     _playlist = p_collection.find_one({ "server": server, "name": playlist })
     if not _playlist:  # Validar si existe playlist
-        return discord.Embed(title=f"La playlist **{playlist}** no existe, por favor, créala para poder usarla.")
+        return discord.Embed(description=f"La playlist **{playlist}** no existe, por favor, créala para poder usarla.")
     try:  # obtener datos del video
         yt = YouTube(url)
         res = json.loads(yt.vid_info["player_response"])
         video_id = res["videoDetails"]["videoId"]
         _videos = _playlist["videos"]
     except:
-        return discord.Embed(title=f"El video {url} es inaccesible.")
+        return discord.Embed(description=f"El video {url} es inaccesible.")
     try:  # Se valida si el video ya existe en la playlist, si no, se guarda,
         founded_video = p_collection.find_one({ "name": playlist, "server": server, "videos.video_id": video_id })
         if founded_video:
             video_user = founded_video["user"]
-            return discord.Embed(title=f"El video **{yt.title}** ya existe en **{playlist}**, fue agregado por **{video_user}**")
+            return discord.Embed(description=f"El video **{yt.title}** ya existe en **{playlist}**, fue agregado por **{video_user}**")
         p_collection.update(
             { "_id": _playlist["_id"] },
             {
@@ -154,9 +154,9 @@ def add_video(playlist, url, server = "", user = "", db = db):
                 }
             }
         )
-        return discord.Embed(title=f"El video **{yt.title}** ha sido agregado correctamente a **{playlist}**")
+        return discord.Embed(description=f"El video **{yt.title}** ha sido agregado correctamente a **{playlist}**")
     except:
-        return discord.Embed(title=f"Error al agregar video a **{playlist}**!")
+        return discord.Embed(description=f"Error al agregar video a **{playlist}**!")
 
 def get_videos(playlist, server = "", db = db):
     """
@@ -168,11 +168,11 @@ def get_videos(playlist, server = "", db = db):
     p_collection = db.playlists
     _playlist = p_collection.find_one({ "server": server, "name": playlist })
     if not _playlist:
-        return discord.Embed(title=f"La playlist **{playlist}** no existe."), { "status": VideosEnum.PLAYLIST_DOESNT_EXISTS, "videos": None}
+        return discord.Embed(description=f"La playlist **{playlist}** no existe."), { "status": VideosEnum.PLAYLIST_DOESNT_EXISTS, "videos": None}
     try:
         videos = _playlist["videos"]
         if len(videos) == 0:
-            return discord.Embed(title=f"No existen videos en **{playlist}**"), { "status": VideosEnum.OK, "videos": videos }
+            return discord.Embed(description=f"No existen videos en **{playlist}**"), { "status": VideosEnum.OK, "videos": videos }
         embed = discord.Embed(title=f"Videos de {playlist}")
         for v in videos:
             _title = v["title"]
@@ -199,10 +199,10 @@ def delete_video_from_playlist(playlist, server, position, db=db):
     if res["videos"] is None and VideosEnum.DB_ERROR:
         return embed
     if not str(position).isdigit():
-        return discord.Embed(title=f"Recuerda que se debe identificar el video a eliminar con el número de su posición.")
+        return discord.Embed(description=f"Recuerda que se debe identificar el video a eliminar con el número de su posición.")
     if len(res["videos"]) < int(position):
         mess = emoji.emojize("IndexOfOutArray amiguito :grimacing:")
-        return discord.Embed(title=mess)
+        return discord.Embed(description=mess)
     pos = int(position)
     videos = res["videos"]
     try:
@@ -219,20 +219,41 @@ def delete_video_from_playlist(playlist, server, position, db=db):
             }
         )
     except:
-        return discord.Embed(title="Algo salió mal :(")
-    return discord.Embed(title=emoji.emojize(f"El video *{d_title}* ha sido eliminado exitosamente :scream_cat:."))
+        return discord.Embed(description="Algo salió mal :(")
+    return discord.Embed(description=emoji.emojize(f"El video *{d_title}* ha sido eliminado exitosamente :scream_cat:."))
 
 def delete_playlist(playlist, servername, db = db):
     p_collection = db.playlists
     _playlist = p_collection.find_one({ "server": servername, "name": playlist })
     if not _playlist:
-        return discord.Embed(title=f"La playlist **{playlist}** no existe.")
+        return discord.Embed(description=f"La playlist **{playlist}** no existe.")
     name = _playlist["name"]
     try:
         p_collection.delete_one({ "_id": _playlist["_id"] })
-        return discord.Embed(title=emoji.emojize(f"La playlist **{name}** se ha eliminado exitosamente :scream_cat:."))
+        return discord.Embed(description=emoji.emojize(f"La playlist **{name}** se ha eliminado exitosamente :scream_cat:."))
     except Exception as e:
-        print("error", e)
-        return discord.Embed(title="**Error**: Ha ocurrido un error al eliminar la playlist :(")
+        return discord.Embed(description="**Error**: Ha ocurrido un error al eliminar la playlist :(")
 
-delete_playlist("refactor", "Tortuga Coder")
+def update_playlist_name(playlist, servername, new_name, user_name, db = db):
+    p_collection = db.playlists
+    _playlist = p_collection.find_one({ "server": servername, "name": playlist })
+    if not _playlist:
+        return discord.Embed(title=f"La playlist **{playlist}** no existe.")
+    try:
+        _user = _playlist["user"]
+        if user_name == _playlist["user"]:
+            p_collection.update(
+                { "_id": _playlist["_id"] },
+                {
+                    "$set": {
+                        "name": new_name
+                    }
+                }
+            )
+            return discord.Embed(description="Nombre actualizado correctamente.")
+        return discord.Embed(description=f"Solo el usuario que creó la playlist puede renombrar la playlist (@{_user})")
+    except:
+        return discord.Embed(description="**Error**: Ha ocurrido un error al actualizar el nombre de la playlist :(")
+
+
+create_playlist("playlist", "other", "Tortuga Coder")
